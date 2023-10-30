@@ -194,12 +194,16 @@ class GPTBenchmark(BaseBenchmark):
                 yield (batch_size, inlen, outlen)
 
     def prepare_inputs(self, config):
-        batch_size, inlen, outlen = config[0], config[1], config[2]
-        input_ids = torch.randint(100, (batch_size, inlen)).int().cuda()
-        input_lengths = torch.tensor([inlen
-                                      for _ in range(batch_size)]).int().cuda()
+        if config.dataset:
 
-        self.decoder.setup(batch_size, inlen, outlen, beam_width=self.num_beams)
+
+        else:
+            batch_size, inlen, outlen = config[0], config[1], config[2]
+            input_ids = torch.randint(100, (batch_size, inlen)).int().cuda()
+            input_lengths = torch.tensor([inlen
+                                          for _ in range(batch_size)]).int().cuda()
+
+            self.decoder.setup(batch_size, inlen, outlen, beam_width=self.num_beams)
         return (input_ids, input_lengths)
 
     def build(self):
@@ -443,13 +447,61 @@ class GPTBenchmark(BaseBenchmark):
                 builder.save_config(builder_config, config_path)
         return engine
 
+    def _sample_requests(
+        dataset_path: str,
+        num_requests: int,
+        tokenizer: PreTrainedTokenizerBase,
+    ) -> List[Tuple[str, int, int]]:
+        # Load the dataset.
+        with open(dataset_path) as f:
+            dataset = json.load(f)
+        # Filter out the conversations with less than 2 turns.
+        dataset = [data for data in dataset if len(data["conversations"]) >= 2]
+        # Only keep the first two turns of each conversation.
+        dataset = [(data["conversations"][0]["value"],
+                    data["conversations"][1]["value"]) for data in dataset]
+
+        # Tokenize the prompts and completions.
+        prompts = [prompt for prompt, _ in dataset]
+        prompt_token_ids = tokenizer(prompts).input_ids
+        completions = [completion for _, completion in dataset]
+        completion_token_ids = tokenizer(completions).input_ids
+        tokenized_dataset = []
+        for i in range(len(dataset)):
+            output_len = len(completion_token_ids[i])
+            tokenized_dataset.append((prompts[i], prompt_token_ids[i], output_len))
+
+        # Filter out too long sequences.
+        filtered_dataset: List[Tuple[str, int, int]] = []
+        for prompt, prompt_token_ids, output_len in tokenized_dataset:
+            prompt_len = len(prompt_token_ids)
+            if prompt_len < 4 or output_len < 4:
+                # Prune too short sequences.
+                continue
+            if prompt_len > 1024 or prompt_len + output_len > 2048:
+                # Prune too long sequences.
+                continue
+            filtered_dataset.append((prompt, prompt_len, output_len))
+
+        # Sample the requests.
+        sampled_requests = random.sample(filtered_dataset, num_requests)
+        return sampled_requests
+
     def run(self, inputs, config):
-        batch_size, inlen, outlen = config[0], config[1], config[2]
-        self.decoder.setup(batch_size, inlen, outlen, beam_width=self.num_beams)
-        if self.remove_input_padding:
-            self.decoder.decode_batch(inputs[0], self.sampling_config)
+        if config.dataset:
+            for i in range(len(requests)):
+
         else:
-            self.decoder.decode(inputs[0], inputs[1], self.sampling_config)
+            batch_size, inlen, outlen = config[0], config[1], config[2]
+            self.decoder.setup(batch_size, inlen, outlen, beam_width=self.num_beams)
+            if self.remove_input_padding:
+                self.decoder.decode_batch(inputs[0], self.sampling_config)
+            else:
+                self.decoder.decode(inputs[0], inputs[1], self.sampling_config)
+
+
+
+
         torch.cuda.synchronize()
 
     def report(self, config, latency, percentile95, percentile99, peak_gpu_used,
@@ -468,6 +520,7 @@ class GPTBenchmark(BaseBenchmark):
         report_dict["latency(ms)"] = latency
         report_dict["build_time(s)"] = self.build_time
         report_dict["tokens_per_sec"] = tokens_per_sec
+        report_dict["requests_per_sec"] = requests_per_sec
         report_dict["percentile95(ms)"] = percentile95
         report_dict["percentile99(ms)"] = percentile99
         report_dict["gpu_peak_mem(gb)"] = peak_gpu_used

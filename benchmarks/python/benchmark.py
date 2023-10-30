@@ -45,6 +45,15 @@ def parse_arguments():
          'while \"plugin\" means the engines will be built with tuned recipe of using plugins.'
          ))
 
+
+    parser.add_argument('--dataset',
+                        type=str,
+                        default=None,
+                        help='Path to dataset')
+    parser.add_argument('--num_prompts',
+                        type=int,
+                        default=1000,
+                        help='Number of prompts to process')
     parser.add_argument('--batch_size',
                         type=str,
                         default="8",
@@ -258,6 +267,8 @@ def main(args):
     benchmarker.print_report_header(args.csv)
     for config in benchmarker.get_config():
         try:
+            config.datset = args.dataset
+            config.num_prompts = args.num_prompts
             inputs = benchmarker.prepare_inputs(config)
         except torch.cuda.OutOfMemoryError as e:
             logger.error(
