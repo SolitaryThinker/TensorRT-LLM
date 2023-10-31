@@ -488,8 +488,9 @@ class GPTBenchmark(BaseBenchmark):
             if prompt_len < 4 or output_len < 4:
                 # Prune too short sequences.
                 continue
-            # if prompt_len > 1024 or prompt_len + output_len > 2048:
-            if prompt_len > 712 or prompt_len + output_len > 712:
+            if prompt_len > 1024 or prompt_len + output_len > 2048:
+            # if prompt_len > 1024 or prompt_len + output_len > 1024:
+            # if prompt_len > 712 or prompt_len + output_len > 712:
                 # Prune too long sequences.
                 continue
             filtered_dataset.append((prompt, prompt_len, output_len))
@@ -499,47 +500,96 @@ class GPTBenchmark(BaseBenchmark):
         return sampled_requests
 
     def run(self, inputs, config):
+        use_batch = True
         if self.use_requests:
-            batch_size = config[0]
-            print('rnning req')
-            batch: List[str] = []
-            max_prompt_len = 0
-            max_output_len = 0
-            for i in range(len(self.requests)):
-                prompt, prompt_len, output_len = self.requests[i]
-                # Add the prompt to the batch.
-                batch.append(prompt)
-                # max_prompt_len = max(max_prompt_len, prompt_len)
-                # max_output_len = max(max_output_len, output_len)
-                # if len(batch) < batch_size and i != len(self.requests) - 1:
-                    # # Check if we can add more requests to the batch.
-                    # _, next_prompt_len, next_output_len = self.requests[i + 1]
-                    # if (max(max_prompt_len, next_prompt_len) +
-                            # max(max_output_len, next_output_len)) <= 712:
-                        # # We can add more requests to the batch.
-                        # continue
-
-                print('b size', len(batch))
-                input_ids = self.tokenizer(batch, return_tensors="pt",
-                                      padding=True).input_ids.cuda()
-                print('max', max_prompt_len, max_output_len)
-                print(input_ids[0].shape)
-                print(prompt_len)
-                input_len = len(input_ids[0])
-                print('input len', input_len)
-                input_ids_new = torch.randint(100, (1, input_len)).int().cuda()
-                print(input_ids.shape)
-                print(input_ids_new.shape)
-                # self.decoder.setup(len(batch), max_prompt_len, max_output_len, beam_width=self.num_beams)
-                self.decoder.setup(len(batch), input_len, output_len, beam_width=self.num_beams)
-                # self.decoder.setup(len(batch), 2048, 128, beam_width=self.num_beams)
-                print(input_ids)
-                out = self.decoder.decode(input_ids_new,
-                        torch.tensor([input_len]).int().cuda() , self.sampling_config)
-                print('out', out.shape)
-                batch = []
+            if use_batch:
+                batch_size = config[0]
+                print('rnning req')
+                batch: List[str] = []
                 max_prompt_len = 0
                 max_output_len = 0
+                for i in range(len(self.requests)):
+                    prompt, prompt_len, output_len = self.requests[i]
+                    # Add the prompt to the batch.
+                    batch.append(prompt)
+                    # max_prompt_len = max(max_prompt_len, prompt_len)
+                    # max_output_len = max(max_output_len, output_len)
+                    # if len(batch) < batch_size and i != len(self.requests) - 1:
+                        # # Check if we can add more requests to the batch.
+                        # _, next_prompt_len, next_output_len = self.requests[i + 1]
+                        # if (max(max_prompt_len, next_prompt_len) +
+                                # max(max_output_len, next_output_len)) <= 712:
+                            # # We can add more requests to the batch.
+                            # continue
+
+                    print('b size', len(batch))
+                    input_ids = self.tokenizer(batch, return_tensors="pt",
+                                          padding=True).input_ids.int().cuda()
+                    # print('max', max_prompt_len, max_output_len)
+                    print(input_ids[0].shape)
+                    # print(prompt_len)
+                    input_len = len(input_ids[0])
+                    print('input len', input_len)
+                    print('output len', output_len)
+                    print('sum: ', output_len+input_len)
+                    input_ids_new = torch.randint(100, (1, input_len)).int().cuda()
+                    print(input_ids.shape)
+                    print(input_ids_new.shape)
+                    # self.decoder.setup(len(batch), max_prompt_len, max_output_len, beam_width=self.num_beams)
+                    self.decoder.setup(len(batch), input_len, output_len, beam_width=self.num_beams)
+                    # self.decoder.setup(len(batch), 2048, 128, beam_width=self.num_beams)
+                    print(input_ids)
+                    out = self.decoder.decode(input_ids,
+                            torch.tensor([input_len]).int().cuda() , self.sampling_config)
+                    # out = self.decoder.decode(input_ids_new,
+                            # torch.tensor([input_len]).int().cuda() , self.sampling_config)
+                    print('out', out.shape)
+                    batch = []
+                    max_prompt_len = 0
+                    max_output_len = 0
+            else:
+
+                batch_size = config[0]
+                print('rnning req')
+                batch: List[str] = []
+                max_prompt_len = 0
+                max_output_len = 0
+                for i in range(len(self.requests)):
+                    prompt, prompt_len, output_len = self.requests[i]
+                    # Add the prompt to the batch.
+                    batch.append(prompt)
+                    # max_prompt_len = max(max_prompt_len, prompt_len)
+                    # max_output_len = max(max_output_len, output_len)
+                    # if len(batch) < batch_size and i != len(self.requests) - 1:
+                        # # Check if we can add more requests to the batch.
+                        # _, next_prompt_len, next_output_len = self.requests[i + 1]
+                        # if (max(max_prompt_len, next_prompt_len) +
+                                # max(max_output_len, next_output_len)) <= 712:
+                            # # We can add more requests to the batch.
+                            # continue
+
+                    print('b size', len(batch))
+                    input_ids = self.tokenizer(batch, return_tensors="pt",
+                                          padding=True).input_ids.cuda()
+                    print('max', max_prompt_len, max_output_len)
+                    print(input_ids[0].shape)
+                    print(prompt_len)
+                    input_len = len(input_ids[0])
+                    print('input len', input_len)
+                    print('context len', input_len+output_len)
+                    input_ids_new = torch.randint(100, (1, input_len)).int().cuda()
+                    print(input_ids.shape)
+                    print(input_ids_new.shape)
+                    # self.decoder.setup(len(batch), max_prompt_len, max_output_len, beam_width=self.num_beams)
+                    self.decoder.setup(len(batch), input_len, output_len, beam_width=self.num_beams)
+                    # self.decoder.setup(len(batch), 2048, 128, beam_width=self.num_beams)
+                    print(input_ids)
+                    out = self.decoder.decode(input_ids_new,
+                            torch.tensor([input_len]).int().cuda() , self.sampling_config)
+                    print('out', out.shape)
+                    batch = []
+                    max_prompt_len = 0
+                    max_output_len = 0
 
 
         else:
