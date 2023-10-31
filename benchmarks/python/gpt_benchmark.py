@@ -15,10 +15,13 @@
 import os
 import time
 from math import ceil
+from typing import List, Optional, Tuple
 
 import torch
 from allowed_configs import get_build_config, get_model_family
 from base_benchmark import BaseBenchmark, get_engine_name, serialize_engine
+import json
+import random
 
 import tensorrt_llm
 from tensorrt_llm._utils import str_dtype_to_trt
@@ -29,6 +32,7 @@ from tensorrt_llm.models import (fp8_quantize, smooth_quantize,
 from tensorrt_llm.network import net_guard
 from tensorrt_llm.plugin.plugin import ContextFMHAType
 from tensorrt_llm.quantization import QuantMode
+from transformers import PreTrainedTokenizerBase
 
 
 class GPTBenchmark(BaseBenchmark):
@@ -59,6 +63,7 @@ class GPTBenchmark(BaseBenchmark):
         self.build_time = 0
         self.mode = mode  # plugin or ootb
         self.fuse_bias = True
+        self.use_requests = False
 
         self.cuda_graph_mode = kwargs.get('enable_cuda_graph', False)
         self.enable_custom_all_reduce = enable_custom_all_reduce
@@ -194,16 +199,12 @@ class GPTBenchmark(BaseBenchmark):
                 yield (batch_size, inlen, outlen)
 
     def prepare_inputs(self, config):
-        if config.dataset:
+        batch_size, inlen, outlen = config[0], config[1], config[2]
+        input_ids = torch.randint(100, (batch_size, inlen)).int().cuda()
+        input_lengths = torch.tensor([inlen
+                                      for _ in range(batch_size)]).int().cuda()
 
-
-        else:
-            batch_size, inlen, outlen = config[0], config[1], config[2]
-            input_ids = torch.randint(100, (batch_size, inlen)).int().cuda()
-            input_lengths = torch.tensor([inlen
-                                          for _ in range(batch_size)]).int().cuda()
-
-            self.decoder.setup(batch_size, inlen, outlen, beam_width=self.num_beams)
+        self.decoder.setup(batch_size, inlen, outlen, beam_width=self.num_beams)
         return (input_ids, input_lengths)
 
     def build(self):
@@ -447,14 +448,21 @@ class GPTBenchmark(BaseBenchmark):
                 builder.save_config(builder_config, config_path)
         return engine
 
-    def _sample_requests(
+    def _sample_requests(self,
         dataset_path: str,
         num_requests: int,
         tokenizer: PreTrainedTokenizerBase,
     ) -> List[Tuple[str, int, int]]:
+        self.use_requests = True
+        self.tokenizer = tokenizer
+        self.tokenizer.pad_token = tokenizer.eos_token
+        print(self.tokenizer.pad_token)
+        self.tokenizer.pad_token = 50256
+        print('loading dataset requests')
         # Load the dataset.
         with open(dataset_path) as f:
             dataset = json.load(f)
+        print('sampling requests')
         # Filter out the conversations with less than 2 turns.
         dataset = [data for data in dataset if len(data["conversations"]) >= 2]
         # Only keep the first two turns of each conversation.
@@ -464,13 +472,15 @@ class GPTBenchmark(BaseBenchmark):
         # Tokenize the prompts and completions.
         prompts = [prompt for prompt, _ in dataset]
         prompt_token_ids = tokenizer(prompts).input_ids
+        # prompt_token_ids = [torch.randint(100, prompt.shape()).int().cuda() for
+                # prompt in prompts]
         completions = [completion for _, completion in dataset]
         completion_token_ids = tokenizer(completions).input_ids
         tokenized_dataset = []
         for i in range(len(dataset)):
             output_len = len(completion_token_ids[i])
             tokenized_dataset.append((prompts[i], prompt_token_ids[i], output_len))
-
+        print('filtering')
         # Filter out too long sequences.
         filtered_dataset: List[Tuple[str, int, int]] = []
         for prompt, prompt_token_ids, output_len in tokenized_dataset:
@@ -478,7 +488,8 @@ class GPTBenchmark(BaseBenchmark):
             if prompt_len < 4 or output_len < 4:
                 # Prune too short sequences.
                 continue
-            if prompt_len > 1024 or prompt_len + output_len > 2048:
+            # if prompt_len > 1024 or prompt_len + output_len > 2048:
+            if prompt_len > 712 or prompt_len + output_len > 712:
                 # Prune too long sequences.
                 continue
             filtered_dataset.append((prompt, prompt_len, output_len))
@@ -488,8 +499,48 @@ class GPTBenchmark(BaseBenchmark):
         return sampled_requests
 
     def run(self, inputs, config):
-        if config.dataset:
-            for i in range(len(requests)):
+        if self.use_requests:
+            batch_size = config[0]
+            print('rnning req')
+            batch: List[str] = []
+            max_prompt_len = 0
+            max_output_len = 0
+            for i in range(len(self.requests)):
+                prompt, prompt_len, output_len = self.requests[i]
+                # Add the prompt to the batch.
+                batch.append(prompt)
+                # max_prompt_len = max(max_prompt_len, prompt_len)
+                # max_output_len = max(max_output_len, output_len)
+                # if len(batch) < batch_size and i != len(self.requests) - 1:
+                    # # Check if we can add more requests to the batch.
+                    # _, next_prompt_len, next_output_len = self.requests[i + 1]
+                    # if (max(max_prompt_len, next_prompt_len) +
+                            # max(max_output_len, next_output_len)) <= 712:
+                        # # We can add more requests to the batch.
+                        # continue
+
+                print('b size', len(batch))
+                input_ids = self.tokenizer(batch, return_tensors="pt",
+                                      padding=True).input_ids.cuda()
+                print('max', max_prompt_len, max_output_len)
+                print(input_ids[0].shape)
+                print(prompt_len)
+                input_len = len(input_ids[0])
+                print('input len', input_len)
+                input_ids_new = torch.randint(100, (1, input_len)).int().cuda()
+                print(input_ids.shape)
+                print(input_ids_new.shape)
+                # self.decoder.setup(len(batch), max_prompt_len, max_output_len, beam_width=self.num_beams)
+                self.decoder.setup(len(batch), input_len, output_len, beam_width=self.num_beams)
+                # self.decoder.setup(len(batch), 2048, 128, beam_width=self.num_beams)
+                print(input_ids)
+                out = self.decoder.decode(input_ids_new,
+                        torch.tensor([input_len]).int().cuda() , self.sampling_config)
+                print('out', out.shape)
+                batch = []
+                max_prompt_len = 0
+                max_output_len = 0
+
 
         else:
             batch_size, inlen, outlen = config[0], config[1], config[2]

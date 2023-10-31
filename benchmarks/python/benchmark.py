@@ -21,6 +21,7 @@ from allowed_configs import get_allowed_models
 from bert_benchmark import BERTBenchmark
 from gpt_benchmark import GPTBenchmark
 from mem_monitor import mem_monitor
+from utils import get_tokenizer
 
 from tensorrt_llm.logger import logger
 
@@ -267,8 +268,18 @@ def main(args):
     benchmarker.print_report_header(args.csv)
     for config in benchmarker.get_config():
         try:
-            config.datset = args.dataset
-            config.num_prompts = args.num_prompts
+            if (args.dataset):
+                # config.dataset = args.dataset
+                # config.num_prompts = args.num_prompts
+                print('getting tok')
+                # tokenizer = get_tokenizer(args.tokenizer, True)
+                tokenizer = get_tokenizer("meta-llama/Llama-2-7b-hf", trust_remote_code=True)
+                print('getting reqs')
+                requests = benchmarker._sample_requests(args.dataset,
+                        args.num_prompts, tokenizer)
+                benchmarker.requests = requests
+                print('done getting reqs')
+
             inputs = benchmarker.prepare_inputs(config)
         except torch.cuda.OutOfMemoryError as e:
             logger.error(
@@ -296,7 +307,10 @@ def main(args):
             start_time = time()
             while iter_idx < args.num_runs or cur_duration < args.duration:
                 start.record()
-                benchmarker.run(inputs, config)
+                if (args.dataset):
+                    benchmarker.run(requests, config)
+                else:
+                    benchmarker.run(inputs, config)
                 end.record()
 
                 torch.cuda.synchronize()
