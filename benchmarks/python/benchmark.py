@@ -330,6 +330,7 @@ def main(args):
         peak_gpu_used = q2.get()
         p.join()
 
+        benchmarker.elapsed_time = sum(latencies)
         latency = round(sum(latencies) / iter_idx, 3)
         latencies.sort()
         percentile95 = round(latencies[int(iter_idx * 0.95)], 3)

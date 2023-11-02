@@ -101,7 +101,7 @@ class BaseBenchmark(object):
             "model_name", "world_size", "num_heads", "num_kv_heads",
             "num_layers", "hidden_size", "vocab_size", "precision",
             "batch_size", "input_length", "output_length", "gpu_peak_mem(gb)",
-            "build_time(s)", "tokens_per_sec", "percentile95(ms)",
+            "build_time(s)", "tokens_per_sec", "requests_per_sec", "percentile95(ms)",
             "percentile99(ms)", "latency(ms)", "compute_cap"
         ]
         report_dict = OrderedDict.fromkeys(report_fields)
