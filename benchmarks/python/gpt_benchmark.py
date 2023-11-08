@@ -456,7 +456,6 @@ class GPTBenchmark(BaseBenchmark):
         self.use_requests = True
         self.tokenizer = tokenizer
         self.tokenizer.pad_token = tokenizer.eos_token
-        print(self.tokenizer.pad_token)
         self.tokenizer.pad_token = 50256
         # print('loading dataset requests')
         # Load the dataset.
@@ -520,19 +519,14 @@ class GPTBenchmark(BaseBenchmark):
 
                     print(input_ids[0].shape)
                     input_len = len(input_ids[0])
-                    print('input len', input_len)
-                    print('output len', output_len)
-                    print('sum: ', output_len+input_len)
                     print(input_ids.shape)
                     # self.decoder.setup(len(batch), max_prompt_len, max_output_len, beam_width=self.num_beams)
                     self.decoder.setup(len(batch), input_len, output_len, beam_width=self.num_beams)
                     # self.decoder.setup(len(batch), 2048, 128, beam_width=self.num_beams)
-                    print(input_ids)
                     out = self.decoder.decode(input_ids.cuda(),
                             torch.tensor([input_len]).int().cuda() , self.sampling_config)
                     # out = self.decoder.decode(input_ids_new,
                             # torch.tensor([input_len]).int().cuda() , self.sampling_config)
-                    print('out', out.shape)
                     batch = []
                     max_prompt_len = 0
                     max_output_len = 0
