@@ -458,11 +458,11 @@ class GPTBenchmark(BaseBenchmark):
         self.tokenizer.pad_token = tokenizer.eos_token
         print(self.tokenizer.pad_token)
         self.tokenizer.pad_token = 50256
-        print('loading dataset requests')
+        # print('loading dataset requests')
         # Load the dataset.
         with open(dataset_path) as f:
             dataset = json.load(f)
-        print('sampling requests')
+        # print('sampling requests')
         # Filter out the conversations with less than 2 turns.
         dataset = [data for data in dataset if len(data["conversations"]) >= 2]
         # Only keep the first two turns of each conversation.
@@ -480,7 +480,7 @@ class GPTBenchmark(BaseBenchmark):
         for i in range(len(dataset)):
             output_len = len(completion_token_ids[i])
             tokenized_dataset.append((prompts[i], prompt_token_ids[i], output_len))
-        print('filtering')
+        # print('filtering')
         # Filter out too long sequences.
         filtered_dataset: List[Tuple[str, int, int]] = []
         for prompt, prompt_token_ids, output_len in tokenized_dataset:
@@ -504,17 +504,16 @@ class GPTBenchmark(BaseBenchmark):
         if self.use_requests:
             if not use_batch:
                 batch_size = config[0]
-                print('NO BATCH rnning req')
                 batch: List[str] = []
                 max_prompt_len = 0
                 max_output_len = 0
                 for i in range(len(self.requests)):
-                    print('num req:', i)
+                    # print('num req:', i)
                     prompt, prompt_token_ids, prompt_len, output_len = self.requests[i]
                     # Add the prompt to the batch.
                     batch.append(prompt)
 
-                    print('b size', len(batch))
+                    # print('b size', len(batch))
                     input_ids = torch.IntTensor([prompt_token_ids,])
                     # input_ids = self.tokenizer(batch, return_tensors="pt",
                                           # padding=True).input_ids.int().cuda()
@@ -540,12 +539,12 @@ class GPTBenchmark(BaseBenchmark):
             else:
 
                 batch_size = config[0]
-                print('BATCH =======rnning req')
+                # print('BATCH =======rnning req')
                 batch: List[str] = []
                 tbatch = []
                 max_prompt_len = 0
                 max_output_len = 0
-                print(len(self.requests))
+                # print(len(self.requests))
                 for i in range(len(self.requests)):
                     prompt, prompt_token_ids, prompt_len, output_len = self.requests[i]
                     # Add the prompt to the batch.
@@ -561,13 +560,13 @@ class GPTBenchmark(BaseBenchmark):
                             # # We can add more requests to the batch.
                             continue
 
-                    print('num req:', i)
-                    print('b size', len(batch))
+                    # print('num req:', i)
+                    # print('b size', len(batch))
                     tbatch = torch.nn.utils.rnn.pad_sequence(tbatch).transpose(0,1)
                     input_len = len(batch[0])
-                    print('input len', input_len)
-                    print('max len', max_prompt_len)
-                    print(tbatch.shape)
+                    # print('input len', input_len)
+                    # print('max len', max_prompt_len)
+                    # print(tbatch.shape)
                     # return
                     if len(batch) > 1:
                         self.decoder.setup(len(batch), max_prompt_len, max_output_len, beam_width=self.num_beams)
