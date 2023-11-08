@@ -507,7 +507,7 @@ class GPTBenchmark(BaseBenchmark):
                 max_prompt_len = 0
                 max_output_len = 0
                 for i in range(len(self.requests)):
-                    # print('num req:', i)
+                    print('num req:', i)
                     prompt, prompt_token_ids, prompt_len, output_len = self.requests[i]
                     # Add the prompt to the batch.
                     batch.append(prompt)
@@ -517,9 +517,9 @@ class GPTBenchmark(BaseBenchmark):
                     # input_ids = self.tokenizer(batch, return_tensors="pt",
                                           # padding=True).input_ids.int().cuda()
 
-                    print(input_ids[0].shape)
+                    # print(input_ids[0].shape)
                     input_len = len(input_ids[0])
-                    print(input_ids.shape)
+                    # print(input_ids.shape)
                     # self.decoder.setup(len(batch), max_prompt_len, max_output_len, beam_width=self.num_beams)
                     self.decoder.setup(len(batch), input_len, output_len, beam_width=self.num_beams)
                     # self.decoder.setup(len(batch), 2048, 128, beam_width=self.num_beams)
