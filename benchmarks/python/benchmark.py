@@ -271,14 +271,14 @@ def main(args):
             if (args.dataset):
                 # config.dataset = args.dataset
                 # config.num_prompts = args.num_prompts
-                print('getting tok')
+                # print('getting tok')
                 # tokenizer = get_tokenizer(args.tokenizer, True)
                 tokenizer = get_tokenizer("meta-llama/Llama-2-7b-hf", trust_remote_code=True)
-                print('getting reqs')
+                # print('getting reqs')
                 requests = benchmarker._sample_requests(args.dataset,
                         args.num_prompts, tokenizer)
                 benchmarker.requests = requests
-                print('done getting reqs')
+                # print('done getting reqs')
 
             inputs = benchmarker.prepare_inputs(config)
         except torch.cuda.OutOfMemoryError as e:
