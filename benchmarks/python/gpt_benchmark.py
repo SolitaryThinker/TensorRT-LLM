@@ -55,6 +55,7 @@ class GPTBenchmark(BaseBenchmark):
                  max_batch_size=None,
                  enable_custom_all_reduce=None,
                  **kwargs):
+        print('__init in gpt_bench')
         super().__init__(engine_dir, model_name, dtype, output_dir)
         self.batch_sizes = batch_sizes
         self.in_out_lens = in_out_lens
@@ -68,6 +69,7 @@ class GPTBenchmark(BaseBenchmark):
         self.cuda_graph_mode = kwargs.get('enable_cuda_graph', False)
         self.enable_custom_all_reduce = enable_custom_all_reduce
 
+        print('building engine')
         if engine_dir is not None:
             # Get build configs from engine directory is done in base class
             # Deserialize engine from engine directory
@@ -147,6 +149,7 @@ class GPTBenchmark(BaseBenchmark):
             engine_buffer = self.build()
 
         assert engine_buffer is not None
+        print('engine done')
 
         model_config = tensorrt_llm.runtime.ModelConfig(
             num_heads=self.num_heads // self.world_size,
@@ -430,6 +433,8 @@ class GPTBenchmark(BaseBenchmark):
 
         if self.fuse_bias:
             tensorrt_llm.graph_rewriting.optimize(network)
+
+        print('actually building')
 
         # Network -> Engine
         start = time.time()
