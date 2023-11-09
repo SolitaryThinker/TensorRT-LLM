@@ -1,0 +1,92 @@
+[BENCHMARK] model_name llama_7b world_size 1 num_heads 32 num_kv_heads 32 num_layers 32 hidden_size 4096 vocab_size 32000 precision float16 batch_size 1 input_length 128 output_length 128 gpu_peak_mem(gb) 16.81 build_time(s) 20.54 tokens_per_sec 148.1 percentile95(ms) 878.02 percentile99(ms) 883.483 latency(ms) 864.26 compute_cap sm90
+
+
+
+[BENCHMARK] model_name llama_7b world_size 1 num_heads 32 num_kv_heads 32 num_layers 32 hidden_size 4096 vocab_size 32000 precision float16 batch_size 1 input_length 128 output_length 2048 gpu_peak_mem(gb) 17.74 build_time(s) 21.64 tokens_per_sec 140.05 percentile95(ms) 14634.043 percentile99(ms) 14634.043 latency(ms) 14623.772 compute_cap sm90
+
+
+[BENCHMARK] model_name llama_7b world_size 1 num_heads 32 num_kv_heads 32 num_layers 32 hidden_size 4096 vocab_size 32000 precision float16 batch_size 1 input_length 2048 output_length 128 gpu_peak_mem(gb) 35.31 build_time(s) 26.43 tokens_per_sec 125.74 percentile95(ms) 1033.776 percentile99(ms) 1044.853 latency(ms) 1017.947 compute_cap sm90
+
+
+[BENCHMARK] model_name llama_7b world_size 1 num_heads 32 num_kv_heads 32 num_layers 32 hidden_size 4096 vocab_size 32000 precision float16 batch_size 1 input_length 2048 output_length 2048 gpu_peak_mem(gb) 36.25 build_time(s) 26.73 tokens_per_sec 124.65 percentile95(ms) 16449.914 percentile99(ms) 16449.914 latency(ms) 16430.157 compute_cap sm90
+
+
+
+# bf16
+[BENCHMARK] model_name llama_7b world_size 1 num_heads 32 num_kv_heads 32 num_layers 32 hidden_size 4096 vocab_size 32000 precision bfloat16 batch_size 1 input_length 128 output_length 128 gpu_peak_mem(gb) 17.97 build_time(s) 17.97 tokens_per_sec 143.12 percentile95(ms) 904.815 percentile99(ms) 908.082 latency(ms) 894.343 compute_cap sm90
+
+
+[BENCHMARK] model_name llama_7b world_size 1 num_heads 32 num_kv_heads 32 num_layers 32 hidden_size 4096 vocab_size 32000 precision bfloat16 batch_size 1 input_length 128 output_length 2048 gpu_peak_mem(gb) 18.9 build_time(s) 17.81 tokens_per_sec 133.17 percentile95(ms) 15395.631 percentile99(ms) 15395.631 latency(ms) 15378.338 compute_cap sm90
+
+
+
+[BENCHMARK] model_name llama_7b world_size 1 num_heads 32 num_kv_heads 32 num_layers 32 hidden_size 4096 vocab_size 32000 precision bfloat16 batch_size 1 input_length 2048 output_length 128 gpu_peak_mem(gb) 52.88 build_time(s) 24.16 tokens_per_sec 119.7 percentile95(ms) 1081.898 percentile99(ms) 1085.922 latency(ms) 1069.339 compute_cap sm90
+
+
+[BENCHMARK] model_name llama_7b world_size 1 num_heads 32 num_kv_heads 32 num_layers 32 hidden_size 4096 vocab_size 32000 precision bfloat16 batch_size 1 input_length 2048 output_length 2048 gpu_peak_mem(gb) 53.82 build_time(s) 28.87 tokens_per_sec 119.78 percentile95(ms) 17109.229 percentile99(ms) 17109.229 latency(ms) 17097.73 compute_cap sm90
+
+
+# 13b batyych 64
+
+[BENCHMARK] model_name llama_13b world_size 1 num_heads 40 num_kv_heads 40 num_layers 40 hidden_size 5120 vocab_size 32000 precision bfloat16 batch_size 64 input_length 128 output_length 128 gpu_peak_mem(gb) 42.74 build_time(s) 30.75 tokens_per_sec 3164.82 percentile95(ms) 2607.326 percentile99(ms) 2609.805 latency(ms) 2588.454 compute_cap sm90
+
+out of mem for 128=>2048
+
+
+# 13b batyych 32
+
+[BENCHMARK] model_name llama_13b world_size 1 num_heads 40 num_kv_heads 40 num_layers 40 hidden_size 5120 vocab_size 32000 precision bfloat16 batch_size 32 input_length 128 output_length 128 gpu_peak_mem(gb) 36.7 build_time(s) 33.08 tokens_per_sec 1982.77 percentile95(ms) 2079.952 percentile99(ms) 2090.091 latency(ms) 2065.793 compute_cap sm90
+
+caught while allocating memory; skipping (32, 128, 2048
+
+#13b fp8 b32
+
+[BENCHMARK] model_name llama_13b world_size 1 num_heads 40 num_kv_heads 40 num_layers 40 hidden_size 5120 vocab_size 32000 precision bfloat16 batch_size 32 input_length 128 output_length 128 gpu_peak_mem(gb) 20.79 build_time(s) 619.17 tokens_per_sec 2970.27 percentile95(ms) 1395.735 percentile99(ms) 1399.867 latency(ms) 1379.001 compute_cap sm90
+
+
+[BENCHMARK] model_name llama_7b world_size 1 num_heads 32 num_kv_heads 32 num_layers 32 hidden_size 4096 vocab_size 32000 precision float16 batch_size 32 input_length 128 output_length 2048 gpu_peak_mem(gb) 28.3 build_time(s) 544.01 tokens_per_sec 3756.88 percentile95(ms) 17494.064 percentile99(ms) 17494.064 latency(ms) 17444.27 compute_cap sm90
+
+
+
+
+
+no batching
+python3 benchmark.py -m llama_7b --dtype bfloat16 --mode plugin --dataset share_gpt.json --num_prompts 100 --batch_size "16" --input_output_len "128,128" --max_input_len 2048 --max_output_len 2048 --num_runs 1 --engine_dir /workspace/engine_no_fp8
+
+
+[BENCHMARK] model_name llama_13b world_size 1 num_heads 40 num_kv_heads 40 num_layers 40 hidden_size 5120 vocab_size 32000 precision bfloat16 batch_size 16 input_length 128 output_length 128 gpu_peak_mem(gb) 74.86 build_time(s) 0 tokens_per_sec 6.84 requests_per_sec 0.00033393281230074907 percentile95(ms) 299461.438 percentile99(ms) 299461.438 latency(ms) 299461.438 compute_cap sm90
+
+
+batch size 16
+python3 benchmark.py -m llama_13b --dtype bfloat16 --mode plugin --dataset share_gpt.json --num_prompts 100 --batch_size "16" --input_output_len "128,128" --max_input_len 2048 --max_output_len 2048 --warm_up 1 --num_runs 1 --engine_dir /workspace/engines/engine_13b_nofp8/
+
+
+
+python3 benchmark.py -m llama_13b --dtype bfloat16 --mode plugin --dataset share_gpt.json --num_prompts 100 --batch_size "32" --input_output_len "128,128" --max_input_len 2048 --max_output_len 2048 --warm_up 1 --fp8_kv_cache --enable_fp8 --num_runs 1 --output_dir /workspace/engines/engine_13b_fp8
+
+[BENCHMARK] model_name llama_13b world_size 1 num_heads 40 num_kv_heads 40 num_layers 40 hidden_size 5120 vocab_size 32000 precision bfloat16 batch_size 32 input_length 128 output_length 128 gpu_peak_mem(gb) 77.97 build_time(s) 1014.51 tokens_per_sec 66.3 requests_per_sec 0.0016187202979052369 percentile95(ms) 61777.195 percentile99(ms) 61777.195 latency(ms) 61777.195 compute_cap sm90
+
+[BENCHMARK] model_name llama_13b world_size 1 num_heads 40 num_kv_heads 40 num_layers 40 hidden_size 5120 vocab_size 32000 precision bfloat16 batch_size 32 input_length 2048 output_length 128 gpu_peak_mem(gb) 77.44 build_time(s) 0 tokens_per_sec 63.08 requests_per_sec 0.0015401085475723589 percentile95(ms) 64930.488 percentile99(ms) 64930.488 latency(ms) 64930.488 compute_cap sm90
+
+
+[BENCHMARK] model_name llama_13b world_size 1 num_heads 40 num_kv_heads 40 num_layers 40 hidden_size 5120 vocab_size 32000 precision bfloat16 batch_size 16 input_length 2048 output_length 2048 gpu_peak_mem(gb) 75.27 build_time(s) 0 tokens_per_sec 273.33 requests_per_sec 0.00166827400957472 percentile95(ms) 119884.383 percentile99(ms) 119884.383 latency(ms) 119884.383 compute_cap sm90
+
+[BENCHMARK] model_name llama_13b world_size 1 num_heads 40 num_kv_heads 40 num_layers 40 hidden_size 5120 vocab_size 32000 precision bfloat16 batch_size 16 input_length 2048 output_length 128 gpu_peak_mem(gb) 63.55 build_time(s) 0 tokens_per_sec 12.61 requests_per_sec 0.001231308401775162 percentile95(ms) 162428.844 percentile99(ms) 162428.844 latency(ms) 162428.844 compute_cap sm90
+
+
+[BENCHMARK] model_name llama_13b world_size 1 num_heads 40 num_kv_heads 40 num_layers 40 hidden_size 5120 vocab_size 32000 precision bfloat16 batch_size 16 input_length 128 output_length 2048 gpu_peak_mem(gb) 63.55 build_time(s) 0 tokens_per_sec 503.31 requests_per_sec 0.0015359954534534578 percentile95(ms) 65104.359 percentile99(ms) 65104.359 latency(ms) 65104.359 compute_cap sm90
+
+[BENCHMARK] model_name llama_13b world_size 1 num_heads 40 num_kv_heads 40 num_layers 40 hidden_size 5120 vocab_size 32000 precision bfloat16 batch_size 32 input_length 128 output_length 2048 gpu_peak_mem(gb) 76.83 build_time(s) 0 tokens_per_sec 934.13 requests_per_sec 0.0014253708664662462 percentile95(ms) 70157.18 percentile99(ms) 70157.18 latency(ms) 70157.18 compute_cap sm90
+[BENCHMARK] model_name llama_13b world_size 1 num_heads 40 num_kv_heads 40 num_layers 40 hidden_size 5120 vocab_size 32000 precision bfloat16 batch_size 32 input_length 128 output_length 2048 gpu_peak_mem(gb) 76.83 build_time(s) 0 tokens_per_sec 1073.71 requests_per_sec 0.0016383532348452645 percentile95(ms) 61036.898 percentile99(ms) 61036.898 latency(ms) 61036.898 compute_cap sm90
+
+
+
+
+7b vllm 64 batch fp8
+[BENCHMARK] model_name llama_7b world_size 1 num_heads 32 num_kv_heads 32 num_layers 32 hidden_size 4096 vocab_size 32000 precision bfloat16 batch_size 64 input_length 128 output_length 128 gpu_peak_mem(gb) 72.98 build_time(s) 624.78 tokens_per_sec 57.76 requests_per_sec 0.002820079272868998 percentile95(ms) 141839.984 percentile99(ms) 141839.984 latency(ms) 141839.984 compute_cap sm90
+
+
+python3 benchmark.py -m llama_7b --dtype bfloat16 --mode plugin --dataset share_gpt.json --num_prompts 300 --batch_size "64" --input_output_len "128,2048" --max_input_len 2048 --max_output_len 2048 --warm_up 1 --fp8_kv_cache --enable_fp8 --num_runs 1 --engine_dir /workspace/engines/engine_7b_fp8/
+
+[BENCHMARK] model_name llama_7b world_size 1 num_heads 32 num_kv_heads 32 num_layers 32 hidden_size 4096 vocab_size 32000 precision bfloat16 batch_size 64 input_length 128 output_length 2048 gpu_peak_mem(gb) 71.1 build_time(s) 0 tokens_per_sec 1366.06 requests_per_sec 0.0031266638390986218 percentile95(ms) 95948.914 percentile99(ms) 95948.914 latency(ms) 95948.914 compute_cap sm90
+
