@@ -602,7 +602,7 @@ class GPTBenchmark(BaseBenchmark):
         batch_size, inlen, outlen = config[0], config[1], config[2]
         tokens_per_sec = round(batch_size * outlen / (latency / 1000), 2)
         if self.use_requests:
-            requests_per_sec = len(self.requests) / self.elapsed_time
+            requests_per_sec = len(self.requests) / (self.elapsed_time/1000)
         else:
             requests_per_sec = -1
         report_dict["num_heads"] = self.num_heads
